@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import com.example.demo.model.Administrateur;
 import com.example.demo.repositories.AdministrateurRepository;
 
+import java.util.Optional;
+
 @Service
 public class UserService {
 
@@ -18,8 +20,9 @@ public class UserService {
 
     public boolean authenticate(String email, String password) {
         logger.info("Authenticating user with email: {}", email);
-        Administrateur user = userRepository.findByEmail(email);
-        if (user != null) {
+        Optional<Administrateur> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            Administrateur user = userOpt.get();
             logger.info("User found with email: {}", email);
             boolean passwordMatches = user.getPassword().equals(password);
             if (passwordMatches) {

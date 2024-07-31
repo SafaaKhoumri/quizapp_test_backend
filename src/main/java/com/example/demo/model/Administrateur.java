@@ -15,35 +15,32 @@ public class Administrateur {
     private List<Test> tests;
 
     // getters and setters
-
-    // Getters
     public Long getId() {
         return id;
     }
 
-    public String getPassword() {
-        return password;
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getEmail() {
         return email;
     }
 
-    public List<Test> getTests() {
-        return tests;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
-    // Setters
-    public void setId(Long id) {
-        this.id = id;
+    public String getPassword() {
+        return password;
     }
 
     public void setPassword(String password) {
         this.password = password;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public List<Test> getTests() {
+        return tests;
     }
 
     public void setTests(List<Test> tests) {

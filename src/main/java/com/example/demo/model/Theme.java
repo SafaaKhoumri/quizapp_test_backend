@@ -2,7 +2,6 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -12,11 +11,11 @@ public class Theme {
     private Long id;
     private String name;
 
-    @OneToMany(mappedBy = "theme")
+    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<Role> roles = new ArrayList<>();
+    private List<Role> roles;
 
-    @OneToMany(mappedBy = "theme")
+    @OneToMany(mappedBy = "theme", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
     private List<Level> levels;
 
