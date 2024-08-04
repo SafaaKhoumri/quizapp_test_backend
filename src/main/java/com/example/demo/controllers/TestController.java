@@ -101,11 +101,18 @@ public class TestController {
             logger.info("Saving test: {}", test);
             testRepository.save(test);
 
+            String testLink = "http://localhost:3000/TakeTest/"; // Adjust this link according to your
+                                                                 // frontend routing
+
             // Envoi d'email aux candidats
             for (Condidats candidate : candidates) {
-                logger.info("Sending email to: {}", candidate.getEmail());
-                emailService.sendEmail(candidate.getEmail(), "Test Invitation",
-                        "You are invited to take the test: " + testRequest.getTestName());
+                if (candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
+                    logger.info("Sending email to: {}", candidate.getEmail());
+                    String emailBody = "You are invited to take the test: " + testRequest.getTestName() + "\n\n"
+                            + "Please click on the following link to take the test:\n"
+                            + testLink;
+                    emailService.sendEmail(candidate.getEmail(), "Test Invitation", emailBody);
+                }
             }
 
             logger.info("Test created and emails sent successfully.");
