@@ -32,6 +32,9 @@ public class TestController {
     private RoleRepository roleRepository;
 
     @Autowired
+    private NiveauRepository levelRepository;
+
+    @Autowired
     private CompetencyRepository competencyRepository;
 
     @Autowired
@@ -70,6 +73,13 @@ public class TestController {
             }
             Role role = roleOpt.get();
 
+            Optional<Level> levelOpt = levelRepository.findById(testRequest.getLevelId());
+            if (!levelOpt.isPresent()) {
+                logger.error("Level not found with ID: {}", testRequest.getLevelId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Level not found.");
+            }
+            Level level = levelOpt.get();
+
             List<Competency> competencies = competencyRepository.findAllById(testRequest.getCompetencyIds());
             if (competencies.isEmpty()) {
                 logger.error("No competencies found for IDs: {}", testRequest.getCompetencyIds());
@@ -91,18 +101,18 @@ public class TestController {
 
             Test test = new Test();
             test.setName(testRequest.getTestName());
-            test.setLanguage(testRequest.getTestLanguage());
             test.setAdministrator(administrator);
             test.setDomaine(domaine);
             test.setRole(role);
+            test.setLevel(level);
             test.setCompetencies(competencies);
             test.setCandidates(candidates);
 
             logger.info("Saving test: {}", test);
             testRepository.save(test);
 
-            String testLink = "http://localhost:3000/TakeTest/"; // Adjust this link according to your
-                                                                 // frontend routing
+            String testLink = "http://localhost:3000/TakeTest/" + test.getId(); // Adjust this link according to your
+                                                                                // frontend routing
 
             // Envoi d'email aux candidats
             for (Condidats candidate : candidates) {
@@ -150,6 +160,13 @@ public class TestController {
             }
             Role role = roleOpt.get();
 
+            Optional<Level> levelOpt = levelRepository.findById(testRequest.getLevelId());
+            if (!levelOpt.isPresent()) {
+                logger.error("Level not found with ID: {}", testRequest.getLevelId());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+            Level level = levelOpt.get();
+
             List<Competency> competencies = competencyRepository.findAllById(testRequest.getCompetencyIds());
             if (competencies.isEmpty()) {
                 logger.error("No competencies found for IDs: {}", testRequest.getCompetencyIds());
@@ -171,10 +188,10 @@ public class TestController {
 
             Test test = new Test();
             test.setName(testRequest.getTestName());
-            test.setLanguage(testRequest.getTestLanguage());
             test.setAdministrator(administrator);
             test.setDomaine(domaine);
             test.setRole(role);
+            test.setLevel(level);
             test.setCompetencies(competencies);
             test.setCandidates(candidates);
 
@@ -192,7 +209,6 @@ public class TestController {
 
     public static class TestRequest {
         private String testName;
-        private String testLanguage;
         private String adminEmail;
         private Long domaineId;
         private Long roleId;
@@ -207,14 +223,6 @@ public class TestController {
 
         public void setTestName(String testName) {
             this.testName = testName;
-        }
-
-        public String getTestLanguage() {
-            return testLanguage;
-        }
-
-        public void setTestLanguage(String testLanguage) {
-            this.testLanguage = testLanguage;
         }
 
         public String getAdminEmail() {
