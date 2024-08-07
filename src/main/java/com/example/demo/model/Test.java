@@ -1,5 +1,7 @@
+// Test.java
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -34,8 +36,11 @@ public class Test {
     @JoinTable(name = "candidate_test", joinColumns = @JoinColumn(name = "test_id"), inverseJoinColumns = @JoinColumn(name = "candidate_id"))
     private List<Condidats> candidates;
 
-    // Getters and Setters
+    @OneToMany(mappedBy = "test")
+    @JsonManagedReference
+    private List<Question> questions;
 
+    // getters and setters
     public Long getId() {
         return id;
     }
@@ -98,5 +103,13 @@ public class Test {
 
     public void setCandidates(List<Condidats> candidates) {
         this.candidates = candidates;
+    }
+
+    public List<Question> getQuestions() {
+        return questions;
+    }
+
+    public void setQuestions(List<Question> questions) {
+        this.questions = questions;
     }
 }

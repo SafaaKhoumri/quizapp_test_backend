@@ -1,6 +1,8 @@
+// Question.java
 package com.example.demo.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import java.util.List;
 
@@ -15,6 +17,11 @@ public class Question {
     @ManyToOne
     @JoinColumn(name = "competency_id")
     private Competency competency;
+
+    @ManyToOne
+    @JoinColumn(name = "test_id")
+    @JsonBackReference
+    private Test test;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
@@ -51,5 +58,13 @@ public class Question {
 
     public void setCompetency(Competency competency) {
         this.competency = competency;
+    }
+
+    public Test getTest() {
+        return test;
+    }
+
+    public void setTest(Test test) {
+        this.test = test;
     }
 }

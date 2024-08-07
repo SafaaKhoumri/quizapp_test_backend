@@ -22,4 +22,5 @@ public class QuestionController {
                 .toList();
         return questionService.findQuestionsByCompetencyIds(ids);
     }
+
 }

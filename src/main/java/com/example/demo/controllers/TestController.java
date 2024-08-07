@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.model.*;
 import com.example.demo.repositories.*;
 import com.example.demo.services.EmailService;
+import com.example.demo.services.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -38,19 +39,20 @@ public class TestController {
     private CompetencyRepository competencyRepository;
 
     @Autowired
-    private CandidatRepository condidatsRepository;
+    private CandidatRepository candidatsRepository;
 
     @Autowired
     private EmailService emailService;
 
-    @PostMapping("/sendTest")
-    public ResponseEntity<String> sendTestEmails(@RequestBody TestRequest testRequest) {
+    @Autowired
+    private QuestionService questionService;
+
+    @PostMapping("/createAndSendTest")
+    public ResponseEntity<String> createAndSendTest(@RequestBody TestRequest testRequest) {
         try {
             logger.info("Received test request: {}", testRequest);
 
-            // Afficher les candidats pour vérifier qu'ils sont correctement envoyés
-            logger.info("Candidates: {}", testRequest.getCandidates());
-
+            // Retrieve and verify related entities
             Optional<Administrateur> administratorOpt = administrateurRepository
                     .findByEmail(testRequest.getAdminEmail());
             if (!administratorOpt.isPresent()) {
@@ -95,9 +97,11 @@ public class TestController {
             // Enregistrer les candidats
             for (Condidats candidate : candidates) {
                 if (candidate.getId() == null) {
-                    condidatsRepository.save(candidate);
+                    candidatsRepository.save(candidate);
                 }
             }
+
+            List<Question> questions = questionService.findQuestionsByCompetencyIds(testRequest.getCompetencyIds());
 
             Test test = new Test();
             test.setName(testRequest.getTestName());
@@ -108,19 +112,24 @@ public class TestController {
             test.setCompetencies(competencies);
             test.setCandidates(candidates);
 
+            // Set the test reference in each question
+            for (Question question : questions) {
+                question.setTest(test);
+            }
+
+            test.setQuestions(questions);
+
             logger.info("Saving test: {}", test);
             testRepository.save(test);
 
-            String testLink = "http://localhost:3000/TakeTest/" + test.getId(); // Adjust this link according to your
-                                                                                // frontend routing
+            String testLink = "http://localhost:3000/TakeTest/" + test.getId();
 
             // Envoi d'email aux candidats
             for (Condidats candidate : candidates) {
                 if (candidate.getEmail() != null && !candidate.getEmail().isEmpty()) {
                     logger.info("Sending email to: {}", candidate.getEmail());
                     String emailBody = "You are invited to take the test: " + testRequest.getTestName() + "\n\n"
-                            + "Please click on the following link to take the test:\n"
-                            + testLink;
+                            + "Please click on the following link to take the test:\n" + testLink;
                     emailService.sendEmail(candidate.getEmail(), "Test Invitation", emailBody);
                 }
             }
@@ -133,78 +142,17 @@ public class TestController {
         }
     }
 
-    @PostMapping("/tests")
-    public ResponseEntity<Test> createTest(@RequestBody TestRequest testRequest) {
-        try {
-            logger.info("Creating test: {}", testRequest);
-
-            Optional<Administrateur> administratorOpt = administrateurRepository
-                    .findByEmail(testRequest.getAdminEmail());
-            if (!administratorOpt.isPresent()) {
-                logger.error("Administrator not found with email: {}", testRequest.getAdminEmail());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            Administrateur administrator = administratorOpt.get();
-
-            Optional<Theme> domaineOpt = domaineRepository.findById(testRequest.getDomaineId());
-            if (!domaineOpt.isPresent()) {
-                logger.error("Domain not found with ID: {}", testRequest.getDomaineId());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            Theme domaine = domaineOpt.get();
-
-            Optional<Role> roleOpt = roleRepository.findById(testRequest.getRoleId());
-            if (!roleOpt.isPresent()) {
-                logger.error("Role not found with ID: {}", testRequest.getRoleId());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            Role role = roleOpt.get();
-
-            Optional<Level> levelOpt = levelRepository.findById(testRequest.getLevelId());
-            if (!levelOpt.isPresent()) {
-                logger.error("Level not found with ID: {}", testRequest.getLevelId());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-            Level level = levelOpt.get();
-
-            List<Competency> competencies = competencyRepository.findAllById(testRequest.getCompetencyIds());
-            if (competencies.isEmpty()) {
-                logger.error("No competencies found for IDs: {}", testRequest.getCompetencyIds());
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-
-            List<Condidats> candidates = testRequest.getCandidates();
-            if (candidates == null || candidates.isEmpty()) {
-                logger.error("No candidates provided in the request.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            }
-
-            // Enregistrer les candidats
-            for (Condidats candidate : candidates) {
-                if (candidate.getId() == null) {
-                    condidatsRepository.save(candidate);
-                }
-            }
-
-            Test test = new Test();
-            test.setName(testRequest.getTestName());
-            test.setAdministrator(administrator);
-            test.setDomaine(domaine);
-            test.setRole(role);
-            test.setLevel(level);
-            test.setCompetencies(competencies);
-            test.setCandidates(candidates);
-
-            logger.info("Saving test: {}", test);
-            testRepository.save(test);
-
-            logger.info("Test created successfully: {}", test);
-            return ResponseEntity.ok(test);
-
-        } catch (Exception e) {
-            logger.error("Error creating test", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+    @GetMapping("/tests/{testId}/questions")
+    public ResponseEntity<List<Question>> getQuestionsByTestId(@PathVariable Long testId) {
+        Optional<Test> testOpt = testRepository.findById(testId);
+        if (!testOpt.isPresent()) {
+            logger.info("Test with ID {} not found", testId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
+        Test test = testOpt.get();
+        List<Question> questions = test.getQuestions();
+        logger.info("Questions for test {}: {}", testId, questions);
+        return ResponseEntity.ok(questions);
     }
 
     public static class TestRequest {
