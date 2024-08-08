@@ -1,6 +1,7 @@
 // Test.java
 package com.example.demo.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import java.util.List;
@@ -14,30 +15,44 @@ public class Test {
 
     @ManyToOne
     @JoinColumn(name = "administrator_id")
+    @JsonIgnore
+
     private Administrateur administrator;
 
     @ManyToOne
     @JoinColumn(name = "domaine_id")
+    @JsonIgnore
+
     private Theme domaine;
 
     @ManyToOne
     @JoinColumn(name = "role_id")
+    @JsonIgnore
+
     private Role role;
 
     @ManyToOne
     @JoinColumn(name = "level_id")
+    @JsonIgnore
+
     private Level level;
 
     @ManyToMany
     @JoinTable(name = "test_competency", joinColumns = @JoinColumn(name = "test_id"), inverseJoinColumns = @JoinColumn(name = "competency_id"))
+    @JsonIgnore
+
     private List<Competency> competencies;
 
     @ManyToMany
     @JoinTable(name = "candidate_test", joinColumns = @JoinColumn(name = "test_id"), inverseJoinColumns = @JoinColumn(name = "candidate_id"))
+    @JsonIgnore
+
     private List<Condidats> candidates;
 
     @OneToMany(mappedBy = "test")
     @JsonManagedReference
+    @JsonIgnore
+
     private List<Question> questions;
 
     // getters and setters

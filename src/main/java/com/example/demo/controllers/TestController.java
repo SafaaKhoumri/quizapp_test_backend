@@ -4,6 +4,8 @@ import com.example.demo.model.*;
 import com.example.demo.repositories.*;
 import com.example.demo.services.EmailService;
 import com.example.demo.services.QuestionService;
+import com.example.demo.services.TestService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,6 +48,38 @@ public class TestController {
 
     @Autowired
     private QuestionService questionService;
+
+    @Autowired
+    private TestService testService;
+
+    @GetMapping("/tests")
+    public ResponseEntity<List<Test>> getAllTests() {
+        List<Test> tests = testService.getAllTests();
+        return ResponseEntity.ok(tests);
+    }
+
+    @GetMapping("/tests/{id}")
+    public ResponseEntity<Test> getTestById(@PathVariable Long id) {
+        Optional<Test> test = testService.getTestById(id);
+        return test.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }
+
+    @GetMapping("/tests/{id}/candidates")
+    public ResponseEntity<List<Condidats>> getCandidatesByTestId(@PathVariable Long id) {
+        List<Condidats> candidates = testService.getCandidatesByTestId(id);
+        return candidates != null ? ResponseEntity.ok(candidates) : ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @GetMapping("/tests/{testId}/questions")
+    public ResponseEntity<List<Question>> getQuestionsByTestId(@PathVariable Long testId) {
+        Optional<Test> testOpt = testService.getTestById(testId);
+        if (!testOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+        Test test = testOpt.get();
+        List<Question> questions = test.getQuestions();
+        return ResponseEntity.ok(questions);
+    }
 
     @PostMapping("/createAndSendTest")
     public ResponseEntity<String> createAndSendTest(@RequestBody TestRequest testRequest) {
@@ -140,19 +174,6 @@ public class TestController {
             logger.error("Error creating test and sending emails", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send emails.");
         }
-    }
-
-    @GetMapping("/tests/{testId}/questions")
-    public ResponseEntity<List<Question>> getQuestionsByTestId(@PathVariable Long testId) {
-        Optional<Test> testOpt = testRepository.findById(testId);
-        if (!testOpt.isPresent()) {
-            logger.info("Test with ID {} not found", testId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-        }
-        Test test = testOpt.get();
-        List<Question> questions = test.getQuestions();
-        logger.info("Questions for test {}: {}", testId, questions);
-        return ResponseEntity.ok(questions);
     }
 
     public static class TestRequest {
