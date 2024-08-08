@@ -45,6 +45,11 @@ public class TestController {
 
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private QuestionRepository questionRepository;
+
+    @Autowired
+    private ReponseRepository answerRepository;
 
     @Autowired
     private QuestionService questionService;
@@ -242,4 +247,73 @@ public class TestController {
             this.candidates = candidates;
         }
     }
+
+    @PostMapping("/tests/{id}/submit")
+    public ResponseEntity<String> submitTest(@PathVariable Long id, @RequestBody List<AnswerRequest> answerRequests) {
+        Optional<Test> testOpt = testService.getTestById(id);
+        if (!testOpt.isPresent()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Test not found.");
+        }
+
+        Test test = testOpt.get();
+        for (AnswerRequest answerRequest : answerRequests) {
+            Answer answer = new Answer();
+            answer.setTexteReponse(answerRequest.getTexteReponse());
+            answer.setEstCorrecte(answerRequest.isEstCorrecte());
+
+            Optional<Question> questionOpt = questionRepository.findById(answerRequest.getQuestionId());
+            if (questionOpt.isPresent()) {
+                answer.setQuestion(questionOpt.get());
+            }
+
+            Optional<Condidats> candidatOpt = candidatsRepository.findById(answerRequest.getCandidatId());
+            if (candidatOpt.isPresent()) {
+                answer.setCandidat(candidatOpt.get());
+            }
+
+            answerRepository.save(answer);
+        }
+
+        return ResponseEntity.ok("Test submitted successfully!");
+    }
+
+    public static class AnswerRequest {
+        private Long questionId;
+        private Long candidatId;
+        private String texteReponse;
+        private boolean estCorrecte;
+
+        public Long getQuestionId() {
+            return questionId;
+        }
+
+        public void setQuestionId(Long questionId) {
+            this.questionId = questionId;
+        }
+
+        public Long getCandidatId() {
+            return candidatId;
+        }
+
+        public void setCandidatId(Long candidatId) {
+            this.candidatId = candidatId;
+        }
+
+        public String getTexteReponse() {
+            return texteReponse;
+        }
+
+        public void setTexteReponse(String texteReponse) {
+            this.texteReponse = texteReponse;
+        }
+
+        public boolean isEstCorrecte() {
+            return estCorrecte;
+        }
+
+        public void setEstCorrecte(boolean estCorrecte) {
+            this.estCorrecte = estCorrecte;
+        }
+    }
+
 }
